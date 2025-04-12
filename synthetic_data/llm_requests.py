@@ -9,7 +9,7 @@ from tqdm.autonotebook import tqdm, trange
 import numpy as np
 
 # Hard-coded path to the project root
-build_project_path = "C:/fine-tuning-build-project/Gemini2.5pro"
+build_project_path = "path"
 synthetic_data_path = os.path.join(build_project_path, 'fine-tuning-build-project', 'synthetic_data')
 
 if synthetic_data_path not in sys.path:
