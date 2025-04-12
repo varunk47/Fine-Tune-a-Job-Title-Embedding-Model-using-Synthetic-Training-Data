@@ -1,4 +1,8 @@
 import os
+# Set Streamlit configuration to disable file watcher
+os.environ['STREAMLIT_SERVER_FILE_WATCHER_TYPE'] = 'none'
+os.environ['STREAMLIT_SERVER_RUN_ON_SAVE'] = 'false'
+
 import streamlit as st
 from sentence_transformers import SentenceTransformer
 import numpy as np
@@ -41,15 +45,24 @@ def get_device():
         return torch.device("mps")
     return torch.device("cpu")
 
+# Callback function to handle search term changes
+def on_change():
+    # Detect if the search term has changed and force a rerun
+    if "user_input" in st.session_state and st.session_state.user_input != st.session_state.saved_search:
+        st.session_state.saved_search = st.session_state.user_input
+        st.session_state.search_submitted = True
+        st.session_state.app_state = "results"
+
 st.title('Job Posting Search Engine')
 device = get_device()
 
 # Initialize session state variables.
 if "selected_job" not in st.session_state:
     st.session_state.selected_job = None
-# Instead of using "user_input" to preserve the search query, we use "saved_search".
 if "saved_search" not in st.session_state:
     st.session_state.saved_search = ""
+if "search_submitted" not in st.session_state:
+    st.session_state.search_submitted = False
 if "app_state" not in st.session_state:
     # "search": initial search input form,
     # "results": search results are available,
@@ -96,7 +109,7 @@ default_model = load_default_model()
 # State Machine:
 #
 # app_state: "search" -> enter query, "results" -> display search results,
-# "similar_jobs" -> display similar job postings.
+# "similar_jobs": a job has been selected to view similar jobs.
 #
 # Transitions:
 # - When user types a query and submits, set app_state = "results"
@@ -161,24 +174,34 @@ if st.session_state.app_state == "similar_jobs" and st.session_state.selected_jo
         st.rerun()
 else:
     # Either in the initial search mode or in search results mode.
-    # Use the saved_search value as the default in the text input.
     user_input = st.text_input(
         "Enter a job title:",
-        value=st.session_state.get("saved_search", ""),
-        key="user_input"
+        value=st.session_state.saved_search,
+        key="user_input",
+        on_change=on_change
     )
-    if user_input:
-        # Save the query separately so that it persists even if the widget is re-rendered.
+    
+    # Create a button to explicitly submit the search
+    search_button = st.button("Search", key="search_button")
+    if search_button and user_input:
         st.session_state.saved_search = user_input
+        st.session_state.search_submitted = True
         st.session_state.app_state = "results"
+        st.rerun()
+    
+    # Process search if user input is provided and search was submitted
+    if st.session_state.search_submitted and st.session_state.saved_search:
+        # Reset the submitted flag so we don't keep searching on every rerun
+        st.session_state.search_submitted = False
+        
         with torch.inference_mode():
             default_query_embedding = default_model.encode(
-                [user_input],
+                [st.session_state.saved_search],
                 normalize_embeddings=True,
                 convert_to_tensor=True,
             )[0]
             finetuned_query_embedding = fine_tuned_model.encode(
-                [user_input],
+                [st.session_state.saved_search],
                 normalize_embeddings=True,
                 convert_to_tensor=True,
             )[0]

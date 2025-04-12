@@ -1,0 +1,6 @@
+[server]
+runOnSave = false
+fileWatcherType = "none"
+
+[global]
+developmentMode = false 
