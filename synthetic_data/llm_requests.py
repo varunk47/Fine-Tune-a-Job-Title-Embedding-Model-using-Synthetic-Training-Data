@@ -38,8 +38,8 @@ rng = np.random.default_rng()
 def get_client():
     return AzureOpenAI(
         api_version="2024-12-01-preview",
-        azure_endpoint="https://varun-m3b211os-eastus2.openai.azure.com/",
-        api_key="1EWd3NL1VFiTfDihkzk1O3NHpgfTNsN0M7W8oLyqUZ6OJxuH8Z1xJQQJ99AKACHYHv6XJ3w3AAABACOGnrtL",
+        azure_endpoint="x",
+        api_key="x",
     )
 
 def format_query_title_list(query_job_titles):
